@@ -1,0 +1,20 @@
+[package]
+name = "rina"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+rina-core = { path = "../rina-core" }
+tokio = { version = "1.0", features = ["full"] }
+clap = { version = "4.0", features = ["derive", "env"] }
+dotenv = "0.15"
+toml = "0.8"
+rig-core.workspace = true
+rig-sqlite.workspace = true
+sqlite-vec = "0.1"
+tokio-rusqlite.workspace = true
+chrono = "0.4"
+twitter-v2 = "0.1.8"
+[[example]]
+name = "main"
+path = "src/main.rs"
