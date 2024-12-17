@@ -4,7 +4,7 @@ Rina is an AI agent Build with [rig](https://github.com/0xPlaygrounds/rig/)
 ![banner](https://github.com/user-attachments/assets/2175f26c-1fac-466c-aa48-c703a608eade)
 
 [TWITTER](https://x.com/Rina_RIG)
-
+[DISCORD](https://discord.gg/rina-rig)
 ## Added Features
 
 - **Rig-Twitter Integration**
