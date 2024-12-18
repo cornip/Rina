@@ -17,7 +17,7 @@ pub struct ReferencedTweet {
     pub id: String,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Tweet {
     pub ext_views: Option<i32>,
     pub created_at: Option<String>,
