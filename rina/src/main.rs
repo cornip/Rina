@@ -129,6 +129,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         args.twitter_cookie_string,
         args.heurist_api_key,
     ).await?;
+    twitter.start().await?;
 
     tokio::join!(
         telegram.start(),

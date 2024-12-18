@@ -52,6 +52,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 ```
 
 #### Method 2: Login with Cookie String
+To get the cookie string, you need to:
+1. Open Chrome DevTools (F12)
+2. Go to Network tab
+3. Select Fetch/XHR
+4. Choose any request that starts with https://x.com/i/api/graphql/
+5. In Request Headers, copy the cookie value
+6. Paste it in your .env file
 
 ```rust
 use rig_twitter::scraper::Scraper;

@@ -118,7 +118,7 @@ impl<M: CompletionModel + 'static, E: EmbeddingModel + 'static> TwitterClient<M,
     }
     async fn start_twitter(&self) -> Result<(), Box<dyn std::error::Error>> {
         loop {
-            self.post_new_tweet().await?;
+            // self.post_new_tweet().await?;
 
             let mentions = self
                 .scraper
@@ -180,7 +180,7 @@ impl<M: CompletionModel + 'static, E: EmbeddingModel + 'static> TwitterClient<M,
                 )
             })
             .collect();
-
+        debug!(history = ?history, "History");
         let context = AttentionContext {
             message_content: tweet_text.as_str().to_string(),
             mentioned_names,
@@ -248,37 +248,46 @@ impl<M: CompletionModel + 'static, E: EmbeddingModel + 'static> TwitterClient<M,
         let mut current_tweet = Some(tweet.clone());
         let mut depth = 0;
 
+        debug!(
+            initial_tweet_id = ?tweet.id,
+            "Building conversation thread"
+        );
+
         while let Some(tweet) = current_tweet {
             thread.push(tweet.clone());
 
             if depth >= MAX_HISTORY_TWEETS {
+                debug!("Reached maximum thread depth of {}", MAX_HISTORY_TWEETS);
                 break;
             }
 
-            current_tweet = if let Some(referenced_tweets) = &tweet.referenced_tweet {
-                if let Some(replied_to) = referenced_tweets
-                    .iter()
-                    .find(|t| matches!(t.kind, rig_twitter::models::ReferencedTweetKind::RepliedTo))
-                {
-                    match self.scraper.get_tweet(&replied_to.id.clone()).await {
-                        Ok(response) => Some(response.clone()),
+            current_tweet = match tweet.in_reply_to_status_id {
+                Some(parent_id) => {
+                    debug!(parent_id = ?parent_id, "Fetching parent tweet");
+                    match self.scraper.get_tweet(&parent_id).await {
+                        Ok(parent_tweet) => Some(parent_tweet),
                         Err(err) => {
-                            error!(?err, "Failed to fetch parent tweet");
+                            debug!(?err, "Failed to fetch parent tweet, stopping thread");
                             None
                         }
                     }
-                } else {
+                }
+                None => {
+                    debug!("No parent tweet found, ending thread");
                     None
                 }
-            } else {
-                None
             };
 
             depth += 1;
         }
 
-        debug!(thread_length = ?thread.len(), "Retrieved conversation thread");
-        thread.reverse(); // Order from oldest to newest
+        debug!(
+            thread_length = thread.len(),
+            depth,
+            "Completed thread building"
+        );
+        
+        thread.reverse();
         Ok(thread)
     }
 
