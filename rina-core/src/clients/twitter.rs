@@ -94,7 +94,7 @@ impl<M: CompletionModel + 'static, E: EmbeddingModel + 'static> TwitterClient<M,
             ))
             .context("Please keep your responses concise and under 280 characters.")
             .build();
-        let tweet_prompt = "Write a 1-2 short sentence post about your current thoughts. Do not add commentary or acknowledge this request, just write the post.\nYour response should not contain any questions. Brief, concise statements only. No emojis. Use \\n\\n (double spaces) between statements.";
+        let tweet_prompt = "Share a single brief thought or observation in one short sentence. Be direct and concise. No questions, hashtags, or emojis.";
         let response = match agent.prompt(&tweet_prompt).await {
             Ok(response) => response,
             Err(err) => {
@@ -124,7 +124,7 @@ impl<M: CompletionModel + 'static, E: EmbeddingModel + 'static> TwitterClient<M,
                 .scraper
                 .search_tweets(
                     &format!("@{}", self.username),
-                    5,
+                    20,
                     rig_twitter::search::SearchMode::Latest,
                     None,
                 )
@@ -261,7 +261,7 @@ impl<M: CompletionModel + 'static, E: EmbeddingModel + 'static> TwitterClient<M,
                     .find(|t| matches!(t.kind, rig_twitter::models::ReferencedTweetKind::RepliedTo))
                 {
                     match self.scraper.get_tweet(&replied_to.id.clone()).await {
-                        Ok(response) => Some(response),
+                        Ok(response) => Some(response.clone()),
                         Err(err) => {
                             error!(?err, "Failed to fetch parent tweet");
                             None
