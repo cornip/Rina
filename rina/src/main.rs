@@ -131,8 +131,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         args.heurist_api_key,
     ).await?;
 
-    let clients = args.clients.split(',').collect::<Vec<&str>>();
-
     tokio::join!(
         telegram.start(),
         discord.start(&args.discord_api_token),
