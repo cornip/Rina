@@ -107,10 +107,17 @@ impl<M: CompletionModel + 'static, E: EmbeddingModel + 'static> TwitterClient<M,
         if let Some(heurist_api_key) = self.heurist_api_key.clone() {
             let heurist = HeurisClient::new(heurist_api_key);
             debug!("Generating image");
-            let image_data = heurist.generate_image("realistic, photorealistic, ultra detailed, masterpiece, 8K illustration, extremely detailed CG unity 8K wallpaper, best quality, absurdres, official art, detailed skin texture, detailed cloth texture, beautiful detailed face, intricate details, best lighting, ultra high res, 8K UHD, film grain, dramatic lighting, delicate,1 girl, Ninym Ralei, blush, beautiful detailed face, skinny, beautiful detailed eyes, medium breasts, shirt, ahoge, straight long hair, red eyes, white shirt, sleeveless, bare shoulders, bangs, skirt, sleeveless shirt, white hair, indoors, upper body, collared shirt, high-waist skirt, lips, blue skirt, gold hair ornament, black ribbon, big pupil, Russian, pointy nose,dynamic angle, uncensored, perfect anatomy, forest, floating hair".to_string()).await?; 
-            debug!("Image generated");
-            let image = vec![(image_data, "image/png".to_string())];
-            self.scraper.send_tweet(&response, None, Some(image)).await?;
+            match heurist.generate_image("realistic, photorealistic, ultra detailed, masterpiece, 8K illustration, extremely detailed CG unity 8K wallpaper, best quality, absurdres, official art, detailed skin texture, detailed cloth texture, beautiful detailed face, intricate details, best lighting, ultra high res, 8K UHD, film grain, dramatic lighting, delicate,1 girl, Ninym Ralei, blush, beautiful detailed face, skinny, beautiful detailed eyes, medium breasts, shirt, ahoge, straight long hair, red eyes, white shirt, sleeveless, bare shoulders, bangs, skirt, sleeveless shirt, white hair, indoors, upper body, collared shirt, high-waist skirt, lips, blue skirt, gold hair ornament, black ribbon, big pupil, Russian, pointy nose,dynamic angle, uncensored, perfect anatomy, forest, floating hair".to_string()).await {
+                Ok(image_data) => {
+                    debug!("Image generated");
+                    let image = vec![(image_data, "image/png".to_string())];
+                    self.scraper.send_tweet(&response, None, Some(image)).await?;
+                }
+                Err(err) => {
+                    error!(?err, "Failed to generate image, sending tweet without image");
+                    self.scraper.send_tweet(&response, None, None).await?;
+                }
+            }
         } else {
             self.scraper.send_tweet(&response, None, None).await?;
         }
@@ -118,7 +125,7 @@ impl<M: CompletionModel + 'static, E: EmbeddingModel + 'static> TwitterClient<M,
     }
     async fn start_twitter(&self) -> Result<(), Box<dyn std::error::Error>> {
         loop {
-            // self.post_new_tweet().await?;
+             self.post_new_tweet().await?;
 
             let mentions = self
                 .scraper
