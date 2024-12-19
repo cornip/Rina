@@ -131,7 +131,7 @@ impl<M: CompletionModel + 'static, E: EmbeddingModel + 'static> TwitterClient<M,
                 .scraper
                 .search_tweets(
                     &format!("@{}", self.username),
-                    20,
+                    10,
                     rig_twitter::search::SearchMode::Latest,
                     None,
                 )

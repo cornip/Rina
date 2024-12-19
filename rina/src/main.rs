@@ -15,6 +15,10 @@ use tokio_rusqlite::Connection;
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
 struct Args {
+    /// Clients to run
+    #[arg(long, env = "CLIENTS", default_value = "discord,twitter,telegram")]
+    clients: String,
+
     /// Path to character profile TOML file
     #[arg(long, default_value = "rina/src/characters/rina.toml")]
     character: String,
@@ -117,24 +121,29 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         ..Default::default()
     };
     let attention = Attention::new(config, should_respond_completion_model);
-    let telegram = TelegramClient::new(agent.clone(), attention.clone(), args.telegram_bot_token);
-    let discord = DiscordClient::new(agent.clone(), attention.clone());
-    let twitter = TwitterClient::new(
-        agent.clone(),
-        attention.clone(),
-        args.twitter_username,
-        args.twitter_password,
-        args.twitter_email,
-        args.twitter_2fa_code,
-        args.twitter_cookie_string,
-        args.heurist_api_key,
-    ).await?;
-    twitter.start().await?;
 
-    tokio::join!(
-        telegram.start(),
-        discord.start(&args.discord_api_token),
-        twitter.start()
-    );
+    let clients = args.clients.split(',').collect::<Vec<&str>>();
+    if clients.contains(&"telegram") {
+        let telegram = TelegramClient::new(agent.clone(), attention.clone(), args.telegram_bot_token);
+        tokio::join!(telegram.start());
+    }
+    if clients.contains(&"discord") {
+        let discord = DiscordClient::new(agent.clone(), attention.clone());
+        tokio::join!(discord.start(&args.discord_api_token)).0?;
+    }
+    if clients.contains(&"twitter") {
+        let twitter = TwitterClient::new(
+            agent.clone(),
+            attention.clone(),
+            args.twitter_username,
+            args.twitter_password,
+            args.twitter_email,
+            args.twitter_2fa_code,
+            args.twitter_cookie_string,
+            args.heurist_api_key,
+        ).await?;
+    
+        tokio::join!(twitter.start()).0?;
+    }
     Ok(())
 }

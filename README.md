@@ -39,6 +39,9 @@ To get the cookie string, you need to:
 6. Paste it in your .env file
 
 ```env
+# Client
+CLIENTS = "discord,twitter,telegram"
+
 # Twitter Configuration
 TWITTER_USERNAME=your_username
 TWITTER_PASSWORD=your_password
