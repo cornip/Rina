@@ -15,9 +15,6 @@ use tokio_rusqlite::Connection;
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
 struct Args {
-    /// Clients to run
-    #[arg(long, env = "CLIENTS", default_value = "discord,twitter,telegram")]
-    clients: String,
 
     /// Path to character profile TOML file
     #[arg(long, default_value = "rina/src/characters/rina.toml")]
@@ -133,7 +130,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         args.twitter_cookie_string,
         args.heurist_api_key,
     ).await?;
-    twitter.start().await?;
+
+    let clients = args.clients.split(',').collect::<Vec<&str>>();
 
     tokio::join!(
         telegram.start(),

@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+futures = "0.3"
 rina-core = { path = "../rina-core" }
 tokio = { version = "1.0", features = ["full"] }
 clap = { version = "4.0", features = ["derive", "env"] }
@@ -15,6 +16,7 @@ sqlite-vec = "0.1"
 tokio-rusqlite.workspace = true
 chrono = "0.4"
 twitter-v2 = "0.1.8"
+
 [[example]]
 name = "main"
 path = "src/main.rs"
