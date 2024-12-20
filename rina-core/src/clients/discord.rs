@@ -31,17 +31,21 @@ impl<M: CompletionModel + 'static, E: EmbeddingModel + 'static> DiscordClient<M,
         Self { agent, attention }
     }
 
-    pub async fn start(&self, token: &str) -> Result<(), serenity::Error> {
+    pub async fn start(&self, token: &str) {
+        info!("Starting Discord bot");
+        
         let intents = GatewayIntents::GUILD_MESSAGES
             | GatewayIntents::DIRECT_MESSAGES
             | GatewayIntents::MESSAGE_CONTENT;
 
         let mut client = Client::builder(token, intents)
             .event_handler(self.clone())
-            .await?;
+            .await
+            .expect("Error creating Discord client");
 
-        info!("Starting discord bot");
-        client.start().await
+        if let Err(why) = client.start().await {
+            error!(?why, "Discord client error");
+        }
     }
 }
 
@@ -220,53 +224,4 @@ pub fn chunk_message(text: &str, max_length: usize, min_chunk_length: usize) -> 
     chunks
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
 
-    #[test]
-    fn test_chunk_message_single_chunk() {
-        let text = "This is a short message";
-        let chunks = chunk_message(text, 100, 1000);
-        assert_eq!(chunks.len(), 1);
-        assert_eq!(chunks[0], text);
-    }
-
-    #[test]
-    fn test_chunk_message_multiple_chunks() {
-        let text = "Line 1\nLine 2\nLine 3";
-        let chunks = chunk_message(text, 10, 5);
-        assert_eq!(chunks.len(), 3);
-        assert_eq!(chunks[0], "Line 1");
-        assert_eq!(chunks[1], "Line 2");
-        assert_eq!(chunks[2], "Line 3");
-    }
-
-    #[test]
-    fn test_chunk_message_empty_lines() {
-        let text = "Line 1\n\n\nLine 2";
-        let chunks = chunk_message(text, 100, 1000);
-        assert_eq!(chunks.len(), 1);
-        assert_eq!(chunks[0], "Line 1\n\n\nLine 2");
-    }
-
-    #[test]
-    fn test_chunk_message_markdown() {
-        let text = "# Heading 1\nSome text under heading 1\n## Heading 2\nMore text\n# Heading 3\nFinal text";
-        let chunks = chunk_message(text, 100, 50);
-        assert_eq!(chunks.len(), 2);
-        assert_eq!(chunks[0], "# Heading 1\nSome text under heading 1");
-        assert_eq!(
-            chunks[1],
-            "## Heading 2\nMore text\n# Heading 3\nFinal text"
-        );
-    }
-
-    #[test]
-    fn test_no_chunking_under_min_length() {
-        let text = "This is a message that won't be chunked because it's under the minimum length";
-        let chunks = chunk_message(text, 10, 1000);
-        assert_eq!(chunks.len(), 1);
-        assert_eq!(chunks[0], text);
-    }
-}

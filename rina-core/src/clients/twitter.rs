@@ -78,10 +78,36 @@ impl<M: CompletionModel + 'static, E: EmbeddingModel + 'static> TwitterClient<M,
         })
     }
 
-    pub async fn start(&self) -> Result<(), Box<dyn std::error::Error>> {
+    pub async fn start(&self) {
         info!("Starting Twitter bot");
-        self.start_twitter().await?;
-        Ok(())
+        loop {
+            if let Err(err) = self.post_new_tweet().await {
+                error!(?err, "Failed to post new tweet");
+            }
+
+            match self.scraper.search_tweets(
+                &format!("@{}", self.username),
+                10,
+                rig_twitter::search::SearchMode::Latest,
+                None,
+            ).await {
+                Ok(mentions) => {
+                    for tweet in mentions.tweets {
+                        if let Err(err) = self.handle_mention(tweet).await {
+                            error!(?err, "Failed to handle mention");
+                        }
+                        tokio::time::sleep(tokio::time::Duration::from_secs(self.random_number(30, 60))).await;
+                    }
+                }
+                Err(err) => {
+                    error!(?err, "Failed to fetch mentions");
+                }
+            }
+
+            tokio::time::sleep(tokio::time::Duration::from_secs(
+                self.random_number(30 * 60, 60 * 60),
+            )).await;
+        }
     }
 
     async fn post_new_tweet(&self) -> Result<(), Box<dyn std::error::Error>> {
@@ -123,32 +149,7 @@ impl<M: CompletionModel + 'static, E: EmbeddingModel + 'static> TwitterClient<M,
         }
         Ok(())
     }
-    async fn start_twitter(&self) -> Result<(), Box<dyn std::error::Error>> {
-        loop {
-             self.post_new_tweet().await?;
 
-            let mentions = self
-                .scraper
-                .search_tweets(
-                    &format!("@{}", self.username),
-                    10,
-                    rig_twitter::search::SearchMode::Latest,
-                    None,
-                )
-                .await?;
-            for tweet in mentions.tweets {
-                self.handle_mention(tweet).await?;
-                // Random delay between 30 and 60 seconds
-                tokio::time::sleep(tokio::time::Duration::from_secs(self.random_number(30, 60)))
-                    .await;
-            }
-            // Random delay between 30 minutes and 1 hour
-            tokio::time::sleep(tokio::time::Duration::from_secs(
-                self.random_number(30 * 60, 60 * 60),
-            ))
-            .await;
-        }
-    }
 
     async fn handle_mention(
         &self,
