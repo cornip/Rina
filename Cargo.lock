@@ -2350,24 +2350,6 @@ dependencies = [
 
 [[package]]
 name = "rig-core"
-version = "0.5.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "67d6a8a31988c7e0e151bb0868e6f8bf0d4a0d01ba57c46a84ad3f354c55cc18"
-dependencies = [
- "futures",
- "glob",
- "ordered-float",
- "reqwest 0.11.27",
- "rig-derive",
- "schemars",
- "serde",
- "serde_json",
- "thiserror 1.0.69",
- "tracing",
-]
-
-[[package]]
-name = "rig-core"
 version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "468788f7c4e5aca46ed9294cfa38a89da577a4c93602f1d4759793acd1bc6d86"
@@ -2398,12 +2380,12 @@ dependencies = [
 
 [[package]]
 name = "rig-sqlite"
-version = "0.1.0"
+version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9013aefe77b4a1edd70a812697e1eb664186c30f6b8f073bb8f9c704adaa7a18"
+checksum = "a8ae2beddf38016bbc269c394aecf8f5094020a413133974d6ed33ed583a39f8"
 dependencies = [
  "chrono",
- "rig-core 0.5.0",
+ "rig-core",
  "rusqlite",
  "serde",
  "serde_json",
@@ -2441,7 +2423,7 @@ dependencies = [
  "clap",
  "dotenv",
  "futures",
- "rig-core 0.6.0",
+ "rig-core",
  "rig-sqlite",
  "rina-core",
  "sqlite-vec",
@@ -2467,7 +2449,7 @@ dependencies = [
  "octocrab",
  "rand",
  "reqwest 0.12.9",
- "rig-core 0.6.0",
+ "rig-core",
  "rig-sqlite",
  "rig-twitter",
  "rusqlite",

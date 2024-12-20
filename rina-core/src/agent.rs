@@ -1,6 +1,5 @@
-use rig::{agent::AgentBuilder, completion::CompletionModel, embeddings::EmbeddingModel};
+use rig::{agent::AgentBuilder, completion::CompletionModel, embeddings::embedding::EmbeddingModel};
 use tracing::info;
-
 use crate::{character::Character, knowledge::KnowledgeBase};
 
 #[derive(Clone)]
