@@ -3,7 +3,7 @@
 
 # Backup files
 **/*.rs.bk
-
+Cargo.lock
 # IDE specific files
 .idea/
 .vscode/

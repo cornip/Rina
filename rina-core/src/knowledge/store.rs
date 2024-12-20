@@ -1,7 +1,8 @@
 use rig::{
-    embeddings::{EmbeddingModel, EmbeddingsBuilder},
+    embeddings::EmbeddingsBuilder,
     vector_store::VectorStoreError,
 };
+use rig::embeddings::embedding::EmbeddingModel;
 use tokio_rusqlite::Connection;
 use tracing::{debug, info};
 
