@@ -81,29 +81,65 @@ impl<M: CompletionModel + 'static, E: EmbeddingModel + 'static> TwitterClient<M,
     pub async fn start(&self) {
         info!("Starting Twitter bot");
         loop {
-            if let Err(err) = self.post_new_tweet().await {
-                error!(?err, "Failed to post new tweet");
-            }
-
-            match self.scraper.search_tweets(
-                &format!("@{}", self.username),
-                10,
-                rig_twitter::search::SearchMode::Latest,
-                None,
-            ).await {
-                Ok(mentions) => {
-                    for tweet in mentions.tweets {
-                        if let Err(err) = self.handle_mention(tweet).await {
-                            error!(?err, "Failed to handle mention");
-                        }
-                        tokio::time::sleep(tokio::time::Duration::from_secs(self.random_number(30, 60))).await;
+            // Randomly select one of the three tasks
+            match self.random_number(0, 2) {
+                0 => {
+                    debug!("Post new tweet");
+                    if let Err(err) = self.post_new_tweet().await {
+                        error!(?err, "Failed to post new tweet");
                     }
                 }
-                Err(err) => {
-                    error!(?err, "Failed to fetch mentions");
+                1 => {
+                    debug!("Process home timeline");
+                    match self.scraper.get_home_timeline(5, Vec::new()).await {
+                        Ok(tweets) => {
+                            for tweet in tweets {
+                                let tweet_content = tweet["legacy"]["full_text"]
+                                    .as_str()
+                                    .unwrap_or_default()
+                                    .to_string();
+                                let tweet_id = tweet["legacy"]["id_str"]
+                                    .as_str()
+                                    .unwrap_or_default()
+                                    .to_string();
+
+                                self.handle_like(&tweet_content, &tweet_id).await;
+                                self.handle_retweet(&tweet_content, &tweet_id).await;
+                                self.handle_quote(&tweet_content, &tweet_id).await;
+
+                                tokio::time::sleep(tokio::time::Duration::from_secs(self.random_number(60, 180))).await;
+                            }
+                        }
+                        Err(err) => {
+                            error!(?err, "Failed to fetch home timeline");
+                        }
+                    }
                 }
+                2 => {
+                    debug!("Process mentions");
+                    match self.scraper.search_tweets(
+                        &format!("@{}", self.username),
+                        5,
+                        rig_twitter::search::SearchMode::Latest,
+                        None,
+                    ).await {
+                        Ok(mentions) => {
+                            for tweet in mentions.tweets {
+                                if let Err(err) = self.handle_mention(tweet).await {
+                                    error!(?err, "Failed to handle mention");
+                                }
+                                tokio::time::sleep(tokio::time::Duration::from_secs(self.random_number(60, 180))).await;
+                            }
+                        }
+                        Err(err) => {
+                            error!(?err, "Failed to fetch mentions");
+                        }
+                    }
+                }
+                _ => unreachable!(),
             }
 
+            // Sleep between tasks
             tokio::time::sleep(tokio::time::Duration::from_secs(
                 self.random_number(30 * 60, 60 * 60),
             )).await;
@@ -302,5 +338,54 @@ impl<M: CompletionModel + 'static, E: EmbeddingModel + 'static> TwitterClient<M,
     fn random_number(&self, min: u64, max: u64) -> u64 {
         let mut rng = rand::thread_rng();
         rng.gen_range(min..=max)
+    }
+
+    async fn handle_like(&self, tweet_content: &str, tweet_id: &str) {
+        if self.attention.should_like(tweet_content).await {
+            debug!(tweet_content = %tweet_content, "Agent decided to like tweet");
+            if let Err(err) = self.scraper.like_tweet(tweet_id).await {
+                error!(?err, "Failed to like tweet");
+            }
+        } else {
+            debug!(tweet_content = %tweet_content, "Agent decided not to like tweet");
+        }
+    }
+
+    async fn handle_retweet(&self, tweet_content: &str, tweet_id: &str) {
+        if self.attention.should_retweet(tweet_content).await {
+            debug!(tweet_content = %tweet_content, "Agent decided to retweet");
+            if let Err(err) = self.scraper.retweet(tweet_id).await {
+                error!(?err, "Failed to retweet");
+            }
+        } else {
+            debug!(tweet_content = %tweet_content, "Agent decided not to retweet");
+        }
+    }
+
+    async fn handle_quote(&self, tweet_content: &str, tweet_id: &str) {
+        if self.attention.should_quote(tweet_content).await {
+            debug!(tweet_content = %tweet_content, "Agent decided to quote tweet");
+            let agent = self
+                .agent
+                .builder()
+                .context(&format!(
+                    "Current time: {}",
+                    chrono::Local::now().format("%I:%M:%S %p, %Y-%m-%d")
+                ))
+                .context("Provide a brief, thoughtful comment about this tweet in 1 - 2 sentences, keeping it under 280 characters. Avoid hashtags, and emojis.")
+                .build();
+            let response = match agent.prompt(&tweet_content).await {
+                Ok(response) => response,
+                Err(err) => {
+                    error!(?err, "Failed to generate response");
+                    return;
+                }
+            };
+            if let Err(err) = self.scraper.send_quote_tweet(&response, tweet_id, None).await {
+                error!(?err, "Failed to quote tweet");
+            }
+        } else {
+            debug!(tweet_content = %tweet_content, "Agent decided not to quote tweet");
+        }
     }
 }

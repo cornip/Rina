@@ -147,4 +147,62 @@ impl<M: CompletionModel> Attention<M> {
             Err(_) => AttentionCommand::Ignore,
         }
     }
+
+    pub async fn should_like(&self, tweet_content: &str) -> bool {
+        let prompt = format!(
+            "You are deciding whether to like a tweet. Consider if the content is positive, interesting, or relevant.\n\n\
+            Tweet: {}\n\n\
+            Respond with only 'true' or 'false':",
+            tweet_content
+        );
+
+        let builder = self.completion_model.completion_request(&prompt);
+
+        match self.completion_model.completion(builder.build()).await {
+            Ok(response) => match response.choice {
+                ModelChoice::Message(text) => text.trim().to_lowercase() == "true",
+                ModelChoice::ToolCall(_, _) => false,
+            },
+            Err(_) => false,
+        }
+    }
+
+    pub async fn should_retweet(&self, tweet_content: &str) -> bool {
+        let prompt = format!(
+            "You are deciding whether to retweet. Only retweet if the content is highly valuable, interesting, or aligns with your values.\n\n\
+            Tweet: {}\n\n\
+            Respond with only 'true' or 'false':",
+            tweet_content
+        );
+
+        let builder = self.completion_model.completion_request(&prompt);
+
+        match self.completion_model.completion(builder.build()).await {
+            Ok(response) => match response.choice {
+                ModelChoice::Message(text) => text.trim().to_lowercase() == "true",
+                ModelChoice::ToolCall(_, _) => false,
+            },
+            Err(_) => false,
+        }
+    }
+
+    pub async fn should_quote(&self, tweet_content: &str) -> bool {
+        let prompt = format!(
+            "You are deciding whether to quote tweet. Quote tweet if the content deserves commentary, \
+            could benefit from additional context, or warrants a thoughtful response.\n\n\
+            Tweet: {}\n\n\
+            Respond with only 'true' or 'false':",
+            tweet_content
+        );
+
+        let builder = self.completion_model.completion_request(&prompt);
+
+        match self.completion_model.completion(builder.build()).await {
+            Ok(response) => match response.choice {
+                ModelChoice::Message(text) => text.trim().to_lowercase() == "true",
+                ModelChoice::ToolCall(_, _) => false,
+            },
+            Err(_) => false,
+        }
+    }
 }
