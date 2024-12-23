@@ -256,6 +256,7 @@ impl<M: CompletionModel + 'static, E: EmbeddingModel + 'static> TwitterClient<M,
                 chrono::Local::now().format("%I:%M:%S %p, %Y-%m-%d")
             ))
             .context("Please keep your responses concise and under 280 characters.")
+            .context("Respond naturally and conversationally in 1-2 short sentences. Avoid flowery language and excessive punctuation.")
             .build();
 
         let response = match agent.prompt(&tweet_text.as_str().to_string()).await {
@@ -374,7 +375,8 @@ impl<M: CompletionModel + 'static, E: EmbeddingModel + 'static> TwitterClient<M,
                     "Current time: {}",
                     chrono::Local::now().format("%I:%M:%S %p, %Y-%m-%d")
                 ))
-                .context("Provide a brief, thoughtful comment about this tweet in 1 - 2 sentences, keeping it under 280 characters. Avoid hashtags, and emojis.")
+                .context("Please keep your responses concise and under 280 characters.")
+                .context("Write a natural reply to the quoted tweet in 1-2 short sentences. Keep it conversational and relevant.")
                 .build();
             let response = match agent.prompt(&tweet_content).await {
                 Ok(response) => response,
