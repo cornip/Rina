@@ -40,3 +40,4 @@ reqwest = { version = "0.12", features = ["json"] }
 rand = "0.8.5"
 teloxide = "0.10.0"
 teloxide-core = "0.10.0"
+base64 = "0.22.1"

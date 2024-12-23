@@ -3,7 +3,7 @@ use crate::{
     attention::{Attention, AttentionCommand, AttentionContext},
     knowledge::{ChannelType, Message, Source},
 };
-
+use std::error::Error;
 use rand::Rng;
 use rig::{
     completion::{CompletionModel, Prompt},
@@ -14,6 +14,8 @@ use std::collections::HashSet;
 use std::sync::Arc;
 use tracing::{debug, error, info};
 use crate::clients::heuris::HeurisClient;
+use base64::{engine::general_purpose::STANDARD, Engine};
+
 const MAX_TWEET_LENGTH: usize = 280;
 const MAX_HISTORY_TWEETS: i64 = 10;
 
@@ -78,6 +80,7 @@ impl<M: CompletionModel + 'static, E: EmbeddingModel + 'static> TwitterClient<M,
         })
     }
 
+
     pub async fn start(&self) {
         info!("Starting Twitter bot");
         loop {
@@ -103,7 +106,8 @@ impl<M: CompletionModel + 'static, E: EmbeddingModel + 'static> TwitterClient<M,
                                     .as_str()
                                     .unwrap_or_default()
                                     .to_string();
-
+                                let photos = tweet["photos"].as_array();
+                                println!("photos: {:?}", photos);
                                 self.handle_like(&tweet_content, &tweet_id).await;
                                 self.handle_retweet(&tweet_content, &tweet_id).await;
                                 self.handle_quote(&tweet_content, &tweet_id).await;
@@ -248,6 +252,15 @@ impl<M: CompletionModel + 'static, E: EmbeddingModel + 'static> TwitterClient<M,
             }
         }
 
+        // Download and convert photos to base64 if present
+        let mut image_urls = Vec::new();
+        for photo in &tweet.photos {
+            match Self::download_image_as_base64(&photo.url).await {
+                Ok(base64_url) => image_urls.push(base64_url),
+                Err(err) => error!(?err, "Failed to download image"),
+            }
+        }
+
         let agent = self
             .agent
             .builder()
@@ -255,8 +268,10 @@ impl<M: CompletionModel + 'static, E: EmbeddingModel + 'static> TwitterClient<M,
                 "Current time: {}",
                 chrono::Local::now().format("%I:%M:%S %p, %Y-%m-%d")
             ))
+            .image_urls(image_urls)
             .context("Please keep your responses concise and under 280 characters.")
             .context("Respond naturally and conversationally in 1-2 short sentences. Avoid flowery language and excessive punctuation.")
+            .context("If the tweet contains images, read it and incorporate them into your response.")
             .build();
 
         let response = match agent.prompt(&tweet_text.as_str().to_string()).await {
@@ -368,6 +383,18 @@ impl<M: CompletionModel + 'static, E: EmbeddingModel + 'static> TwitterClient<M,
     async fn handle_quote(&self, tweet_content: &str, tweet_id: &str) {
         if self.attention.should_quote(tweet_content).await {
             debug!(tweet_content = %tweet_content, "Agent decided to quote tweet");
+            
+            // Download tweet photos if present
+            let mut image_urls = Vec::new();
+            if let Ok(tweet) = self.scraper.get_tweet(tweet_id).await {
+                for photo in &tweet.photos {
+                    match Self::download_image_as_base64(&photo.url).await {
+                        Ok(base64_url) => image_urls.push(base64_url),
+                        Err(err) => error!(?err, "Failed to download image"),
+                    }
+                }
+            }
+
             let agent = self
                 .agent
                 .builder()
@@ -377,7 +404,10 @@ impl<M: CompletionModel + 'static, E: EmbeddingModel + 'static> TwitterClient<M,
                 ))
                 .context("Please keep your responses concise and under 280 characters.")
                 .context("Write a natural reply to the quoted tweet in 1-2 short sentences. Keep it conversational and relevant.")
+                .context("If the tweet contains images, read it and incorporate them into your response.")
+                .image_urls(image_urls)
                 .build();
+
             let response = match agent.prompt(&tweet_content).await {
                 Ok(response) => response,
                 Err(err) => {
@@ -391,5 +421,12 @@ impl<M: CompletionModel + 'static, E: EmbeddingModel + 'static> TwitterClient<M,
         } else {
             debug!(tweet_content = %tweet_content, "Agent decided not to quote tweet");
         }
+    }
+    async fn download_image_as_base64(image_url: &str) -> Result<String, Box<dyn Error>> {
+        let response = reqwest::get(image_url).await?;
+        let image_data = response.bytes().await?;
+        let base64_string = STANDARD.encode(&image_data);
+        let data_uri = format!("data:{};base64,{}", "image/jpeg", base64_string);
+        Ok(data_uri)
     }
 }
