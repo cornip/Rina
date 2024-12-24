@@ -5,12 +5,12 @@ use reqwest::{Client, Method};
 use serde::de::DeserializeOwned;
 use std::time::Duration;
 
-pub struct TwitterApiClient {
+pub struct TwitterClient {
     pub client: Client,
     pub auth: Box<dyn TwitterAuth + Send + Sync>,
 }
 
-impl TwitterApiClient {
+impl TwitterClient {
     pub fn new(auth: Box<dyn TwitterAuth + Send + Sync>) -> Result<Self> {
         let client = Client::builder()
             .timeout(Duration::from_secs(30))

@@ -1,5 +1,4 @@
 use crate::api::requests::request_api;
-use crate::auth::user_auth::TwitterAuth;
 use crate::error::{Result, TwitterError};
 use crate::models::Profile;
 use chrono::{DateTime, Utc};
@@ -10,7 +9,8 @@ use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::collections::HashMap;
 use std::sync::Mutex;
-use reqwest::Client;
+use crate::api::client::TwitterClient;
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UserProfile {
     pub id: String,
@@ -188,9 +188,9 @@ pub struct TwitterApiErrorRaw {
     pub code: i32,
 }
 
-pub async fn get_profile(client: &Client, auth: &dyn TwitterAuth,screen_name: &str) -> Result<Profile> {
+pub async fn get_profile(client: &TwitterClient, screen_name: &str) -> Result<Profile> {
     let mut headers = HeaderMap::new();
-    auth.install_headers(&mut headers).await?;
+    client.auth.install_headers(&mut headers).await?;
 
     let variables = json!({
         "screen_name": screen_name,
@@ -215,7 +215,7 @@ pub async fn get_profile(client: &Client, auth: &dyn TwitterAuth,screen_name: &s
     });
 
     let (response, _) = request_api::<UserRaw>(
-        client,
+        &client.client,
         "https://twitter.com/i/api/graphql/G3KGOASz96M-Qu0nwmGXNg/UserByScreenName",
         headers,
         Method::GET,
@@ -246,9 +246,9 @@ pub async fn get_profile(client: &Client, auth: &dyn TwitterAuth,screen_name: &s
     Ok(parse_profile(&legacy, is_blue_verified))
 }
 
-pub async fn get_screen_name_by_user_id(client: &Client, auth: &dyn TwitterAuth,user_id: &str) -> Result<String> {
+pub async fn get_screen_name_by_user_id(client: &TwitterClient, user_id: &str) -> Result<String> {
     let mut headers = HeaderMap::new();
-    auth.install_headers(&mut headers).await?;
+    client.auth.install_headers(&mut headers).await?;
 
     let variables = json!({
         "userId": user_id,
@@ -269,7 +269,7 @@ pub async fn get_screen_name_by_user_id(client: &Client, auth: &dyn TwitterAuth,
     });
 
     let (response, _) = request_api::<UserRaw>(
-        client,
+        &client.client,
         "https://twitter.com/i/api/graphql/xf3jd90KKBCUxdlI_tNHZw/UserByRestId",
         headers,
         Method::GET,
@@ -297,15 +297,14 @@ pub async fn get_screen_name_by_user_id(client: &Client, auth: &dyn TwitterAuth,
 }
 
 pub async fn get_user_id_by_screen_name(
-    client: &Client,
-    auth: &dyn TwitterAuth,
+    client: &TwitterClient,
     screen_name: &str,
 ) -> Result<String> {
     if let Some(cached_id) = ID_CACHE.lock().unwrap().get(screen_name) {
         return Ok(cached_id.clone());
     }
 
-    let profile = get_profile(client, auth, screen_name).await?;
+    let profile = get_profile(client, screen_name).await?;
     if let Some(user_id) = Some(profile.id) {
         ID_CACHE
             .lock()

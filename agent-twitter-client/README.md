@@ -55,16 +55,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 ```rust
 use agent_twitter_client::scraper::Scraper;
+use agent_twitter_client::error::Result;
 use dotenv::dotenv;
-use std::env;
+
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() -> Result<()> {
+    dotenv().ok();
     let mut scraper = Scraper::new().await?;
-    scraper.set_from_cookie_string(env::var("TWITTER_COOKIE_STRING")?).await?;
-    
-    let is_logged_in = scraper.is_logged_in().await?;
-    println!("Login status: {}", is_logged_in);
-    
+    let cookie_string = std::env::var("TWITTER_COOKIE_STRING")
+        .expect("TWITTER_COOKIE_STRING environment variable not set");
+    scraper.set_from_cookie_string(&cookie_string).await?;
     Ok(())
 }
 ```
@@ -72,15 +72,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 ### User Operations
 
 ```rust
-use dotenv::dotenv;
-use std::env;
 use agent_twitter_client::scraper::Scraper;
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    dotenv().ok();
-    let scraper = Scraper::new().await?;
+use agent_twitter_client::error::Result;
+use dotenv::dotenv;
 
-    scraper.set_from_cookie_string(env::var("TWITTER_COOKIE_STRING")?).await?;
+#[tokio::main]
+async fn main() -> Result<()> {
+    dotenv().ok();
+    let mut scraper = Scraper::new().await?;
+    let cookie_string = std::env::var("TWITTER_COOKIE_STRING")
+        .expect("TWITTER_COOKIE_STRING environment variable not set");
+    scraper.set_from_cookie_string(&cookie_string).await?;
+
     // Follow a user
     scraper.follow_user("Rina_RIG").await?;
     
@@ -97,15 +100,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 ### Search Operations
 
 ```rust
-use dotenv::dotenv;
-use std::env;
 use agent_twitter_client::scraper::Scraper;
 use agent_twitter_client::search::SearchMode;
+use agent_twitter_client::error::Result;
+use dotenv::dotenv;
+
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() -> Result<()> {
     dotenv().ok();
-    let scraper = Scraper::new().await?;
-    scraper.set_from_cookie_string(env::var("TWITTER_COOKIE_STRING")?).await?;
+    let mut scraper = Scraper::new().await?;
+    let cookie_string = std::env::var("TWITTER_COOKIE_STRING")
+        .expect("TWITTER_COOKIE_STRING environment variable not set");
+    scraper.set_from_cookie_string(&cookie_string).await?;
     
     // Search tweets
     let tweets = scraper.search_tweets(
@@ -125,14 +131,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 ### Timeline Operations
 
 ```rust
-use dotenv::dotenv;
-use std::env;
 use agent_twitter_client::scraper::Scraper;
+use agent_twitter_client::error::Result;
+use dotenv::dotenv;
+
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() -> Result<()> {
     dotenv().ok();
-    let scraper = Scraper::new().await?;
-    scraper.set_from_cookie_string(env::var("TWITTER_COOKIE_STRING")?).await?;
+    let mut scraper = Scraper::new().await?;
+    let cookie_string = std::env::var("TWITTER_COOKIE_STRING")
+        .expect("TWITTER_COOKIE_STRING environment variable not set");
+    scraper.set_from_cookie_string(&cookie_string).await?;
     
     // Get home timeline
     let tweets = scraper.get_home_timeline(20, vec![]).await?;
@@ -147,14 +156,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 ### Tweet Interactions
 
 ```rust
-use dotenv::dotenv;
-use std::env;
+use std::fs::File;
+use std::io::Read;
 use agent_twitter_client::scraper::Scraper;
+use agent_twitter_client::error::Result;
+use dotenv::dotenv;
+
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() -> Result<()> {
     dotenv().ok();
-    let scraper = Scraper::new().await?;
-    scraper.set_from_cookie_string(env::var("TWITTER_COOKIE_STRING")?).await?;
+    let mut scraper = Scraper::new().await?;
+    let cookie_string = std::env::var("TWITTER_COOKIE_STRING")
+        .expect("TWITTER_COOKIE_STRING environment variable not set");
+    scraper.set_from_cookie_string(&cookie_string).await?;
     
     // Like a tweet
     scraper.like_tweet("tweet_id").await?;
@@ -164,15 +178,23 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     
     // Post a new tweet
     scraper.send_tweet("Hello, Twitter!", None, None).await?;
+
     // Send a simple tweet
     let tweet = scraper.send_tweet("Hello world!", None, None).await?;
+
     // Create media data tuple with image data and MIME type
     let mut file = File::open("image.jpg")?;
     let mut image_data = Vec::new();
     file.read_to_end(&mut image_data)?;
     let media_data = vec![(image_data, "image/jpeg".to_string())];
+
     // Send the tweet with the image
-    let tweet_with_media = scraper.send_tweet("Check out this image!",None,Some(media_data)).await?;
+    let tweet_with_media = scraper.send_tweet(
+        "Check out this image!",
+        None,
+        Some(media_data)
+    ).await?;
+
     Ok(())
 }
 ```

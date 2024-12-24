@@ -1,7 +1,13 @@
 [package]
 name = "agent-twitter-client"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
+description = "A Twitter/X API client library using cookies"
+license = "MIT"
+repository = "https://github.com/cornip/agent-twitter-client"
+readme = "README.md"
+keywords = ["twitter", "api", "client"]
+categories = ["api-bindings", "web-programming::http-client"]
 
 [dependencies]
 reqwest = { version = "0.11", features = ["json", "cookies", "multipart"] }
@@ -18,3 +24,7 @@ regex = "1.5"
 url = "2.5.0"
 tokio = { version = "1.0", features = ["full"] }
 tracing = "0.1" 
+dotenv = "0.15"
+
+[examples]
+get_home_timeline = { path = "./examples/get_home_timeline.rs" }
