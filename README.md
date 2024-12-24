@@ -5,7 +5,7 @@ Rina is an AI agent Build with [rig](https://github.com/0xPlaygrounds/rig/)
 
 ## Added Features
 
-- **Rig-Twitter Integration**
+- **Twitter Client Integration**
   - Cookie-based authentication
   - No Twitter API costs
   - Interact with the home timeline (like, retweet, quote)

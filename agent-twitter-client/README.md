@@ -6,7 +6,7 @@ A Rust library that provides a scraper interface for the Twitter API. Easily int
 
 ## Features
 
-- Flexible authentication (credentials or cookies)
+- Authentication with cookies
 - Comprehensive user profile management
 - Timeline retrieval
 - Tweet interactions (like, retweet, post)
@@ -19,7 +19,7 @@ Add these dependencies to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-rig-twitter = "0.1.0"
+agent-twitter-client = "0.1.0"
 tokio = { version = "1.0", features = ["full"] }
 dotenv = "0.15"
 ```
@@ -52,21 +52,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 ```
 
 #### Method 2: Login with Cookie String
-To get the cookie string, you need to:
-1. Open Chrome DevTools (F12)
-2. Go to Network tab
-3. Select Fetch/XHR
-4. Choose any request that starts with https://x.com/i/api/graphql/
-5. In Request Headers, copy the cookie value
-6. Paste it in your .env file
 
 ```rust
 use rig_twitter::scraper::Scraper;
-
+use dotenv::dotenv;
+use std::env;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut scraper = Scraper::new().await?;
-    scraper.set_from_cookie_string("auth_token=xxx; ct0=yyy;").await?;
+    scraper.set_from_cookie_string(env::var("TWITTER_COOKIE_STRING")?).await?;
     
     let is_logged_in = scraper.is_logged_in().await?;
     println!("Login status: {}", is_logged_in);
@@ -78,18 +72,23 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 ### User Operations
 
 ```rust
+use dotenv::dotenv;
+use std::env;
+use rig_twitter::scraper::Scraper;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    dotenv().ok();
     let scraper = Scraper::new().await?;
-    
+
+    scraper.set_from_cookie_string(env::var("TWITTER_COOKIE_STRING")?).await?;
     // Follow a user
-    scraper.follow_user("elonmusk").await?;
+    scraper.follow_user("Rina_RIG").await?;
     
     // Get user profile
-    let profile = scraper.get_profile("elonmusk").await?;
+    let profile = scraper.get_profile("Rina_RIG").await?;
     
     // Get user's followers
-    let (followers, next_cursor) = scraper.get_followers("elonmusk", 20, None).await?;
+    let (followers, next_cursor) = scraper.get_followers("Rina_RIG", 20, None).await?;
     
     Ok(())
 }
@@ -98,15 +97,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 ### Search Operations
 
 ```rust
+use dotenv::dotenv;
+use std::env;
+use rig_twitter::scraper::Scraper;
 use rig_twitter::search::SearchMode;
-
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    dotenv().ok();
     let scraper = Scraper::new().await?;
+    scraper.set_from_cookie_string(env::var("TWITTER_COOKIE_STRING")?).await?;
     
     // Search tweets
     let tweets = scraper.search_tweets(
-        "rust programming",
+        "@Rina_RIG",
         20,
         SearchMode::Latest,
         None
@@ -122,9 +125,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 ### Timeline Operations
 
 ```rust
+use dotenv::dotenv;
+use std::env;
+use rig_twitter::scraper::Scraper;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    dotenv().ok();
     let scraper = Scraper::new().await?;
+    scraper.set_from_cookie_string(env::var("TWITTER_COOKIE_STRING")?).await?;
     
     // Get home timeline
     let tweets = scraper.get_home_timeline(20, vec![]).await?;
@@ -139,9 +147,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 ### Tweet Interactions
 
 ```rust
+use dotenv::dotenv;
+use std::env;
+use rig_twitter::scraper::Scraper;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    dotenv().ok();
     let scraper = Scraper::new().await?;
+    scraper.set_from_cookie_string(env::var("TWITTER_COOKIE_STRING")?).await?;
     
     // Like a tweet
     scraper.like_tweet("tweet_id").await?;
@@ -173,28 +186,8 @@ TWITTER_USERNAME=your_username
 TWITTER_PASSWORD=your_password
 TWITTER_EMAIL=your_email@example.com
 TWITTER_2FA_SECRET=your_2fa_secret  # Optional
+TWITTER_COOKIE_STRING='your_cookie_string'
 ```
-
-## Error Handling
-
-```rust
-use rig_twitter::error::TwitterError;
-
-match scraper.follow_user("username").await {
-    Ok(_) => println!("Success!"),
-    Err(TwitterError::Auth(msg)) => println!("Authentication error: {}", msg),
-    Err(TwitterError::Api(msg)) => println!("API error: {}", msg),
-    Err(e) => println!("Other error: {}", e),
-}
-```
-
-## Best Practices
-
-1. Implement proper rate limit handling
-2. Store credentials securely
-3. Remember that cookie strings expire
-4. Use comprehensive error handling
-5. Comply with Twitter's terms of service
 
 ## License
 

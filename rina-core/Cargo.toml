@@ -35,7 +35,7 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 walkdir = "2.4"
 zerocopy = "0.8.10"
 twitter-v2 = "0.1.8"
-rig-twitter = { path = "../rig-twitter" }
+agent-twitter-client = { path = "../agent-twitter-client" }
 reqwest = { version = "0.12", features = ["json"] }
 rand = "0.8.5"
 teloxide = "0.10.0"

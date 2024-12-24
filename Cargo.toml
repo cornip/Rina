@@ -3,7 +3,7 @@ members = ["rina-core", "rina"]
 resolver = "2"
 
 [workspace.dependencies]
-rig-twitter = "0.1.0"
+agent-twitter-client = "0.1.0"
 rig-core = { path = "./rig-core", features = ["derive"] }
 rig-sqlite = { path = "./rig-sqlite" }
 tokio-rusqlite = { git = "https://github.com/programatik29/tokio-rusqlite", version = "0.6.0", features = [
