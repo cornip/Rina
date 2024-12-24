@@ -9,7 +9,7 @@ use rig::{
     completion::{CompletionModel, Prompt},
     embeddings::EmbeddingModel,
 };
-use rig_twitter::scraper::Scraper;
+use agent_twitter_client::scraper::Scraper;
 use std::collections::HashSet;
 use std::sync::Arc;
 use tracing::{debug, error, info};
@@ -27,8 +27,8 @@ pub struct TwitterClient<M: CompletionModel, E: EmbeddingModel + 'static> {
     heurist_api_key: Option<String>,
 }
 
-impl From<rig_twitter::models::Tweet> for Message {
-    fn from(tweet: rig_twitter::models::Tweet) -> Self {
+impl From<agent_twitter_client::models::Tweet> for Message {
+    fn from(tweet: agent_twitter_client::models::Tweet) -> Self {
         let created_at = tweet.time_parsed.unwrap_or_default();
 
         Self {
@@ -126,7 +126,7 @@ impl<M: CompletionModel + 'static, E: EmbeddingModel + 'static> TwitterClient<M,
                     match self.scraper.search_tweets(
                         &format!("@{}", self.username),
                         5,
-                        rig_twitter::search::SearchMode::Latest,
+                        agent_twitter_client::search::SearchMode::Latest,
                         None,
                     ).await {
                         Ok(mentions) => {
@@ -195,7 +195,7 @@ impl<M: CompletionModel + 'static, E: EmbeddingModel + 'static> TwitterClient<M,
 
     async fn handle_mention(
         &self,
-        tweet: rig_twitter::models::Tweet,
+        tweet: agent_twitter_client::models::Tweet,
     ) -> Result<(), Box<dyn std::error::Error>> {
         let tweet_text = Arc::new(tweet.text.clone().unwrap_or_default());
         let knowledge = self.agent.knowledge();
@@ -304,8 +304,8 @@ impl<M: CompletionModel + 'static, E: EmbeddingModel + 'static> TwitterClient<M,
 
     async fn build_conversation_thread(
         &self,
-        tweet: &rig_twitter::models::Tweet,
-    ) -> Result<Vec<rig_twitter::models::Tweet>, Box<dyn std::error::Error>> {
+        tweet: &agent_twitter_client::models::Tweet,
+    ) -> Result<Vec<agent_twitter_client::models::Tweet>, Box<dyn std::error::Error>> {
         let mut thread = Vec::new();
         let mut current_tweet = Some(tweet.clone());
         let mut depth = 0;

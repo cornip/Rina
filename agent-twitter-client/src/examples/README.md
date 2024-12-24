@@ -31,7 +31,7 @@ dotenv = "0.15"
 #### Method 1: Login with Credentials
 
 ```rust
-use rig_twitter::scraper::Scraper;
+use agent_twitter_client::scraper::Scraper;
 use dotenv::dotenv;
 use std::env;
 
@@ -61,7 +61,7 @@ To get the cookie string, you need to:
 6. Paste it in your .env file
 
 ```rust
-use rig_twitter::scraper::Scraper;
+use agent_twitter_client::scraper::Scraper;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -98,7 +98,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 ### Search Operations
 
 ```rust
-use rig_twitter::search::SearchMode;
+use agent_twitter_client::search::SearchMode;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -178,7 +178,7 @@ TWITTER_2FA_SECRET=your_2fa_secret  # Optional
 ## Error Handling
 
 ```rust
-use rig_twitter::error::TwitterError;
+use agent_twitter_client::error::TwitterError;
 
 match scraper.follow_user("username").await {
     Ok(_) => println!("Success!"),

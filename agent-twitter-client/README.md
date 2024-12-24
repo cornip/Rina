@@ -31,7 +31,7 @@ dotenv = "0.15"
 #### Method 1: Login with Credentials
 
 ```rust
-use rig_twitter::scraper::Scraper;
+use agent_twitter_client::scraper::Scraper;
 use dotenv::dotenv;
 use std::env;
 
@@ -54,7 +54,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 #### Method 2: Login with Cookie String
 
 ```rust
-use rig_twitter::scraper::Scraper;
+use agent_twitter_client::scraper::Scraper;
 use dotenv::dotenv;
 use std::env;
 #[tokio::main]
@@ -74,7 +74,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 ```rust
 use dotenv::dotenv;
 use std::env;
-use rig_twitter::scraper::Scraper;
+use agent_twitter_client::scraper::Scraper;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenv().ok();
@@ -99,8 +99,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 ```rust
 use dotenv::dotenv;
 use std::env;
-use rig_twitter::scraper::Scraper;
-use rig_twitter::search::SearchMode;
+use agent_twitter_client::scraper::Scraper;
+use agent_twitter_client::search::SearchMode;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenv().ok();
@@ -127,7 +127,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 ```rust
 use dotenv::dotenv;
 use std::env;
-use rig_twitter::scraper::Scraper;
+use agent_twitter_client::scraper::Scraper;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenv().ok();
@@ -149,7 +149,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 ```rust
 use dotenv::dotenv;
 use std::env;
-use rig_twitter::scraper::Scraper;
+use agent_twitter_client::scraper::Scraper;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenv().ok();

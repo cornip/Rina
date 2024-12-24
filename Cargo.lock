@@ -18,6 +18,26 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "512761e0bb2578dd7380c6baaa0f4ce03e84f95e960231d1dec8bf4d7d6e2627"
 
 [[package]]
+name = "agent-twitter-client"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "chrono",
+ "cookie 0.16.2",
+ "lazy_static",
+ "regex",
+ "reqwest 0.11.27",
+ "serde",
+ "serde_json",
+ "thiserror 1.0.69",
+ "tokio",
+ "totp-rs",
+ "tracing",
+ "url",
+ "urlencoding",
+]
+
+[[package]]
 name = "ahash"
 version = "0.8.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2618,26 +2638,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "rig-twitter"
-version = "0.1.0"
-dependencies = [
- "async-trait",
- "chrono",
- "cookie 0.16.2",
- "lazy_static",
- "regex",
- "reqwest 0.11.27",
- "serde",
- "serde_json",
- "thiserror 1.0.69",
- "tokio",
- "totp-rs",
- "tracing",
- "url",
- "urlencoding",
-]
-
-[[package]]
 name = "rina"
 version = "0.1.0"
 dependencies = [
@@ -2659,6 +2659,7 @@ dependencies = [
 name = "rina-core"
 version = "0.1.0"
 dependencies = [
+ "agent-twitter-client",
  "anyhow",
  "arrow-array",
  "async-trait",
@@ -2674,7 +2675,6 @@ dependencies = [
  "reqwest 0.12.9",
  "rig-core",
  "rig-sqlite",
- "rig-twitter",
  "rusqlite",
  "serde",
  "serde_json",
