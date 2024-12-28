@@ -1,0 +1,27 @@
+[package]
+name = "rina-solana"
+version = "0.1.0"
+edition = "2021"
+description = "Solana integration for Rina"
+license = "MIT"
+
+[dependencies]
+tokio = { version = "1.4.1", features = ["full"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+reqwest = { version = "0.11", features = ["json"] }
+thiserror = "1.0"
+dotenv = "0.15"
+tracing = "0.1"
+tracing-subscriber = "0.3"
+anyhow = "1.0" 
+jupiter-swap-api-client = "0.1.0"
+spl-associated-token-account = "1.1.3"
+spl-token = "3.5.0"
+solana-program = "1.18.26"
+solana-sdk = "1.18.26"
+solana-client = "1.18.26"
+bincode = "1.3"
+jito-sdk-rust = "0.1.0"
+base64 = "0.22"
+rig-core.workspace = true

@@ -25,6 +25,12 @@ Rina is an AI agent Build with [rig](https://github.com/0xPlaygrounds/rig/)
   - Customizable topics
   - Configurable communication styles
 
+- **Solana Trading**
+  - Transfer SOL: Send SOL to a specified wallet address.
+  - Token Swaps: Swap SOL for other tokens directly using Jup.ag.
+  - Market Analysis: Analyze Solana market trends using GMGN data.
+  - Portfolio Insights: Evaluate and analyze current portfolio holdings.
+
 ## Prerequisites
 
 - Rust programming language
@@ -62,6 +68,11 @@ DISCORD_API_TOKEN=your_discord_token
 # API Keys
 OPENAI_API_KEY=your_openai_key
 HEURIST_API_KEY=your_heurist_key
+
+# Solana Configuration
+SOLANA_RPC_URL=https://api.mainnet-beta.solana.com
+SOLANA_PRIVATE_KEY=your_solana_private_key
+SOLANA_WALLET_ADDRESS=your_solana_wallet_address
 ```
 ## Usage
 

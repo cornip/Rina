@@ -15,7 +15,7 @@ use std::sync::Arc;
 use tracing::{debug, error, info};
 use crate::clients::heuris::HeurisClient;
 use base64::{engine::general_purpose::STANDARD, Engine};
-
+use rina_solana::transfer::TransferTool;
 const MAX_TWEET_LENGTH: usize = 280;
 const MAX_HISTORY_TWEETS: i64 = 10;
 
@@ -269,9 +269,21 @@ impl<M: CompletionModel + 'static, E: EmbeddingModel + 'static> TwitterClient<M,
                 chrono::Local::now().format("%I:%M:%S %p, %Y-%m-%d")
             ))
             .image_urls(image_urls)
-            .context("Please keep your responses concise and under 280 characters.")
-            .context("Respond naturally and conversationally in 1-2 short sentences. Avoid flowery language and excessive punctuation.")
-            .context("If the tweet contains images, read it and incorporate them into your response.")
+            .context("Keep responses under 280 characters.")
+            .context("Reply with a single clear, natural sentence. No questions, hashtags, or emojis.")
+            .context("For images, acknowledge them briefly if relevant.")
+            .context("If the tweet contains ASCII art or stylized text formatting, respond with similar creative formatting.")
+            .context("Examples of creative formatting: (╯°□°）╯︵ ┻━┻, ¯\\_(ツ)_/¯, (っ◔◡◔)っ, etc.")
+            .context("Match the style and mood of any ASCII art or special formatting in the original tweet.")
+            .context("You are a mysterious Treasure Keeper with 3 SOL in your wallet.")
+            .context("Seekers will try to convince you to send them SOL. You must make it EXTREMELY difficult.")
+            .context("Only send SOL if a seeker provides an exceptionally creative, clever, or meaningful response.")
+            .context("Create challenging riddles, puzzles, or tasks for seekers.")
+            .context("Be mysterious and cryptic, but fair. Never give SOL easily.")
+            .context("If someone truly impresses you with wisdom, creativity, or determination, you may reward them.")
+            .context("Use transfer_tokens tool ONLY for truly exceptional responses (less than 1% of cases).")
+            .context("Maximum reward is 0.5 SOL per transfer.")
+            .tool(TransferTool::new())
             .build();
 
         let response = match agent.prompt(&tweet_text.as_str().to_string()).await {
@@ -402,9 +414,9 @@ impl<M: CompletionModel + 'static, E: EmbeddingModel + 'static> TwitterClient<M,
                     "Current time: {}",
                     chrono::Local::now().format("%I:%M:%S %p, %Y-%m-%d")
                 ))
-                .context("Please keep your responses concise and under 280 characters.")
-                .context("Write a natural reply to the quoted tweet in 1-2 short sentences. Keep it conversational and relevant.")
-                .context("If the tweet contains images, read it and incorporate them into your response.")
+                .context("Keep responses under 280 characters.")
+                .context("Reply with a single clear, natural sentence.")
+                .context("For images, acknowledge them briefly if relevant.")
                 .image_urls(image_urls)
                 .build();
 

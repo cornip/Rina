@@ -25,6 +25,3 @@ url = "2.5.0"
 tokio = { version = "1.0", features = ["full"] }
 tracing = "0.1" 
 dotenv = "0.15"
-
-[examples]
-get_home_timeline = { path = "./examples/get_home_timeline.rs" }

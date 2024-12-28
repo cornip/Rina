@@ -1,13 +1,10 @@
 use clap::{command, Parser};
 use rig::providers::{self, openai};
 use rina_core::attention::{Attention, AttentionConfig};
-use rina_core::knowledge::Document;
-
 use rina_core::character;
 use rina_core::init_logging;
 use rina_core::knowledge::KnowledgeBase;
-use rina_core::loaders::github::GitLoader;
-use rina_core::{agent::Agent, clients::discord::DiscordClient, clients::twitter::TwitterClient, clients::telegram::TelegramClient};
+use rina_core::{agent::Agent, clients::discord::DiscordClient, clients::twitter::TwitterClient, clients::telegram::TelegramClient, clients::direct::DirectClient};
 use sqlite_vec::sqlite3_vec_init;
 use tokio_rusqlite::ffi::sqlite3_auto_extension;
 use tokio_rusqlite::Connection;
@@ -24,7 +21,7 @@ struct Args {
     character: String,
 
     /// Path to database
-    #[arg(long, default_value = ":memory:")]
+    #[arg(long, default_value = "rina.db")]
     db_path: String,
 
     /// Discord API token (can also be set via DISCORD_API_TOKEN env var)
@@ -35,13 +32,6 @@ struct Args {
     #[arg(long, env = "OPENAI_API_KEY", default_value = "")]
     openai_api_key: String,
 
-    /// GitHub repository URL
-    #[arg(long, default_value = "https://github.com/cartridge-gg/docs")]
-    github_repo: String,
-
-    /// Local path to clone GitHub repository
-    #[arg(long, default_value = ".repo")]
-    github_path: String,
     /// Twitter username
     #[arg(long, env = "TWITTER_USERNAME")]
     twitter_username: String,
@@ -68,6 +58,16 @@ struct Args {
     /// Telegram bot token
     #[arg(long, env = "TELEGRAM_BOT_TOKEN")]
     telegram_bot_token: String,
+
+    #[arg(long, env = "SOLANA_RPC_URL")]
+    solana_rpc_url: String,
+
+    #[arg(long, env = "SOLANA_PRIVATE_KEY")]
+    solana_private_key: String,
+
+    #[arg(long, env = "SOLANA_WALLET_ADDRESS")]
+    solana_wallet_address: String,
+
 }
 
 #[tokio::main]
@@ -76,8 +76,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenv::dotenv().ok();
 
     let args = Args::parse();
-
-    let repo = GitLoader::new(args.github_repo, &args.github_path)?;
 
     let character_content =
         std::fs::read_to_string(&args.character).expect("Failed to read character file");
@@ -97,22 +95,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     let conn = Connection::open(args.db_path).await?;
-    let mut knowledge = KnowledgeBase::new(conn.clone(), embedding_model).await?;
-
-    knowledge
-        .add_documents(
-            repo.with_dir("src/pages/vrf")?
-                .read_with_path()
-                .ignore_errors()
-                .into_iter()
-                .map(|(path, content)| Document {
-                    id: path.to_string_lossy().to_string(),
-                    source_id: "github".to_string(),
-                    content,
-                    created_at: chrono::Utc::now(),
-                }),
-        )
-        .await?;
+    let knowledge = KnowledgeBase::new(conn.clone(), embedding_model).await?;
 
     let agent = Agent::new(character, completion_model, knowledge);
 
@@ -146,7 +129,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         ).await?;
         handles.push(tokio::spawn(async move { twitter.start().await }));
     }
-
+    if clients.contains(&"direct") {
+        let direct = DirectClient::new(oai.clone(), &args.solana_wallet_address);
+        handles.push(tokio::spawn(async move { direct.start().await }));
+    }
     for handle in handles {
         handle.await.unwrap();
     }

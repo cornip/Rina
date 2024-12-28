@@ -13,7 +13,6 @@ dotenv = "0.15.0"
 futures = "0.3.31"
 git2 = "0.19.0"
 idna = "1.0.3"
-octocrab = "0.42.1"
 rig-core.workspace = true
 rig-sqlite.workspace = true
 rusqlite = { version = "0.32", features = ["bundled", "chrono"] }
@@ -41,3 +40,4 @@ rand = "0.8.5"
 teloxide = "0.10.0"
 teloxide-core = "0.10.0"
 base64 = "0.22.1"
+rina-solana.workspace = true
