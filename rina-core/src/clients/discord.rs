@@ -18,7 +18,7 @@ use crate::{
 
 const MIN_CHUNK_LENGTH: usize = 100;
 const MAX_MESSAGE_LENGTH: usize = 1500;
-const MAX_HISTORY_MESSAGES: i64 = 10;
+const MAX_HISTORY_MESSAGES: i64 = 99999;
 
 #[derive(Clone)]
 pub struct DiscordClient<M: CompletionModel, E: EmbeddingModel + 'static> {
@@ -138,9 +138,17 @@ impl<M: CompletionModel + 'static, E: EmbeddingModel + 'static> EventHandler
                 chrono::Local::now().format("%I:%M:%S %p, %Y-%m-%d")
             ))
             .context("Please keep your responses concise and under 2000 characters when possible.")
+            .context(&format!(
+                "Your response should be based on the latest messages: {:?}"
+                ,context.history.iter()
+                .map(|(_, msg)| format!("- {}", msg))
+                .collect::<Vec<_>>()
+                .join("\n"),
+            ))
             .build();
 
-        let response = match agent.prompt(&msg.content).await {
+        let discord_prompt = format!("Generate a reply to this message: {}", msg.content);
+        let response = match agent.prompt(&discord_prompt).await {
             Ok(response) => response,
             Err(err) => {
                 error!(?err, "Failed to generate response");

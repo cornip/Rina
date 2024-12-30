@@ -11,7 +11,7 @@ use teloxide::{
 };
 use tracing::{debug, error, info};
 
-const MAX_HISTORY_MESSAGES: i64 = 10;
+const MAX_HISTORY_MESSAGES: i64 = 99999;
 
 pub struct TelegramClient<M: CompletionModel, E: EmbeddingModel + 'static> {
     agent: Agent<M, E>,
@@ -87,7 +87,7 @@ impl<M: CompletionModel + 'static, E: EmbeddingModel + 'static> TelegramClient<M
         let context = AttentionContext {
             message_content: text.clone(),
             mentioned_names,
-            history,
+            history: history,
             channel_type: if msg.chat.is_private() {
                 ChannelType::DirectMessage
             } else {
@@ -114,8 +114,16 @@ impl<M: CompletionModel + 'static, E: EmbeddingModel + 'static> TelegramClient<M
                 chrono::Local::now().format("%I:%M:%S %p, %Y-%m-%d")
             ))
             .context("Please keep your responses concise and under 4096 characters when possible.")
+            .context(&format!(
+                "Your response should be based on the latest messages: {:?}"
+                ,context.history.iter()
+                .map(|(_, msg)| format!("- {}", msg))
+                .collect::<Vec<_>>()
+                .join("\n"),
+            ))
             .build();
-        let response = match agent.prompt(&text).await {
+        let telegram_prompt = format!("Generate a reply to this message: {}", text);
+        let response = match agent.prompt(&telegram_prompt).await {
             Ok(response) => response,
             Err(err) => {
                 error!(?err, "Failed to generate response");

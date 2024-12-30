@@ -84,15 +84,15 @@ impl<M: CompletionModel + 'static, E: EmbeddingModel + 'static> TwitterClient<M,
     pub async fn start(&self) {
         info!("Starting Twitter bot");
         loop {
-            match self.random_number(0, 5) {
-                // 50% chance for new tweets
+            match self.random_number(0, 9) {
+                // ~33% chance for new tweets (0,1,2)
                 0 | 1 | 2 => {
                     debug!("Post new tweet");
                     if let Err(err) = self.post_new_tweet().await {
                         error!(?err, "Failed to post new tweet");
                     }
                 }
-                 // ~17% chance for timeline
+                // ~11% chance for timeline (3)
                 3 => {
                     debug!("Process home timeline");
                     match self.scraper.get_home_timeline(5, Vec::new()).await {
@@ -120,8 +120,8 @@ impl<M: CompletionModel + 'static, E: EmbeddingModel + 'static> TwitterClient<M,
                         }
                     }
                 }
-                // ~33% chance for mentions 
-                4 | 5 => {
+                // ~56% chance for mentions (4-9)
+                4 | 5 | 6 | 7 | 8 | 9 => {
                     debug!("Process mentions");
                     match self.scraper.search_tweets(
                         &format!("@{}", self.username),
@@ -147,7 +147,7 @@ impl<M: CompletionModel + 'static, E: EmbeddingModel + 'static> TwitterClient<M,
 
             // Sleep between tasks
             tokio::time::sleep(tokio::time::Duration::from_secs(
-                self.random_number(15 * 60, 60 * 60),
+                self.random_number(10 * 60, 30 * 60),
             )).await;
         }
     }
@@ -231,6 +231,7 @@ impl<M: CompletionModel + 'static, E: EmbeddingModel + 'static> TwitterClient<M,
             })
             .collect();
         debug!(history = ?history, "History");
+        
         let context = AttentionContext {
             message_content: tweet_text.as_str().to_string(),
             mentioned_names,
@@ -238,6 +239,8 @@ impl<M: CompletionModel + 'static, E: EmbeddingModel + 'static> TwitterClient<M,
             channel_type: knowledge_msg.channel_type,
             source: knowledge_msg.source,
         };
+
+        debug!(?context, "Attention context");
 
         if self.username.to_lowercase() == tweet.username.unwrap_or_default().to_lowercase() {
             debug!("Not replying to bot itself");
@@ -284,6 +287,13 @@ impl<M: CompletionModel + 'static, E: EmbeddingModel + 'static> TwitterClient<M,
             .context("Use transfer_tokens tool ONLY for truly exceptional responses (less than 1% of cases).")
             .context("Maximum reward is 0.5 SOL per transfer.")
             .tool(TransferTool::new())
+            .context(&format!(
+                "You should based on history: {:?}"
+                ,context.history.iter()
+                .map(|(_, msg)| format!("- {}", msg))
+                .collect::<Vec<_>>()
+                .join("\n"),
+            ))
             .build();
 
         let response = match agent.prompt(&tweet_text.as_str().to_string()).await {
