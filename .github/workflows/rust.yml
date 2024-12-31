@@ -1,0 +1,61 @@
+name: Deploy to AWS
+
+on:
+  push:
+    branches: [ main ]  # or your default branch
+  pull_request:
+    branches: [ main ]
+
+env:
+  CARGO_TERM_COLOR: always
+  AWS_REGION: us-east-1  # Change to your preferred region
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Install Rust toolchain
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        override: true
+
+    - name: Cache dependencies
+      uses: actions/cache@v2
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+    - name: Build
+      run: cargo build --release
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Create deployment package
+      run: |
+        mkdir -p deploy
+        cp target/release/agent-twitter-client deploy/
+        cp .env.example deploy/.env  # Make sure to create this file
+        cd deploy && zip -r ../deploy.zip .
+
+    - name: Deploy to AWS Elastic Beanstalk
+      uses: einaregilsson/beanstalk-deploy@v21
+      with:
+        aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        application_name: agent-twitter-client  # Your EB application name
+        environment_name: agent-twitter-client-prod  # Your EB environment name
+        version_label: ${{ github.sha }}
+        region: ${{ env.AWS_REGION }}
+        deployment_package: deploy.zip
