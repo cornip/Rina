@@ -1,5 +1,4 @@
 name: rina-deploy
-
 on:
   push:
     branches:
