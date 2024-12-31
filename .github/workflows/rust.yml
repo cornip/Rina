@@ -37,4 +37,4 @@ jobs:
         username: ${{ secrets.AWS_USER }}
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         script: |
-          sudo systemctl restart your_service_name  # Change to your service name
+          sudo systemctl restart rina
