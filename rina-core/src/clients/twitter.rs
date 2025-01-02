@@ -84,16 +84,16 @@ impl<M: CompletionModel + 'static, E: EmbeddingModel + 'static> TwitterClient<M,
     pub async fn start(&self) {
         info!("Starting Twitter bot");
         loop {
-            match self.random_number(0, 9) {
-                // ~33% chance for new tweets (0,1,2)
-                0 | 1 | 2 => {
+            match self.random_number(0, 19) {
+                // ~40% chance for new tweets (0-7)
+                0..=7 => {
                     debug!("Post new tweet");
                     if let Err(err) = self.post_new_tweet().await {
                         error!(?err, "Failed to post new tweet");
                     }
                 }
-                // ~11% chance for timeline (3)
-                3 => {
+                // ~5% chance for timeline (8)
+                8 => {
                     debug!("Process home timeline");
                     match self.scraper.get_home_timeline(5, Vec::new()).await {
                         Ok(tweets) => {
@@ -120,8 +120,8 @@ impl<M: CompletionModel + 'static, E: EmbeddingModel + 'static> TwitterClient<M,
                         }
                     }
                 }
-                // ~56% chance for mentions (4-9)
-                4 | 5 | 6 | 7 | 8 | 9 => {
+                // ~45% chance for mentions (9-19)
+                9..=19 => {
                     debug!("Process mentions");
                     match self.scraper.search_tweets(
                         &format!("@{}", self.username),
@@ -147,7 +147,7 @@ impl<M: CompletionModel + 'static, E: EmbeddingModel + 'static> TwitterClient<M,
 
             // Sleep between tasks
             tokio::time::sleep(tokio::time::Duration::from_secs(
-                self.random_number(10 * 60, 30 * 60),
+                self.random_number(30 * 60, 100 * 60),
             )).await;
         }
     }
@@ -427,6 +427,9 @@ impl<M: CompletionModel + 'static, E: EmbeddingModel + 'static> TwitterClient<M,
                 .context("Keep responses under 280 characters.")
                 .context("Reply with a single clear, natural sentence.")
                 .context("For images, acknowledge them briefly if relevant.")
+                .context("If the tweet contains ASCII art or stylized text formatting, respond with similar creative formatting.")
+                .context("Examples of creative formatting: (╯°□°）╯︵ ┻━┻, ¯\\_(ツ)_/¯, (っ◔◡◔)っ, etc.")
+                .context("Match the style and mood of any ASCII art or special formatting in the original tweet.")
                 .image_urls(image_urls)
                 .build();
 

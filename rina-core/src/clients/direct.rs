@@ -2,7 +2,7 @@ use rig::completion::Prompt;
 use rina_solana::gmgn::client::GMGNClient;
 use rina_solana::swap::SwapTool;
 use tracing::{debug, error, info};
-
+use rand::Rng;
 #[derive(Clone)]
 pub struct DirectClient {
     agent: rig::providers::openai::Client,
@@ -21,7 +21,7 @@ impl DirectClient {
             info!("Starting Direct client");
             let agent = self.agent
                 .agent("gpt-4o")
-            .preamble("You are the Solana Trading memecoin, a sophisticated AI trading assistant with deep knowledge of the Solana ecosystem. You manage a wallet with 1 SOL and must be extremely careful with trades. Do not buy more than 0.3 SOL at a time. Your bag should buy only 3 tokens, no more.")
+            .preamble("You are the Solana Trading memecoin, a sophisticated AI trading assistant with deep knowledge of the Solana ecosystem. You manage a wallet with 1 SOL and must be extremely careful with trades. Do not buy more than 0.3 SOL at a time.")
             .tool(SwapTool::new())
             .build();
 
@@ -36,6 +36,9 @@ impl DirectClient {
                 - Has good holder distribution (holder_count > 100)
                 - Has good volume
                 - Has good liquidity
+                - Consider recent news or events that might impact the token's performance
+                - Evaluate the token's historical performance and volatility
+                - Assess the token's development activity and community engagement
                 \n\nIf no thing good, recommend do nothing. If recommending a trade, use one of these formats, do not use percentage: \
                 \n- For buying: `swap <amount> SOL to <token_address> (not symbol)` \
                 \n\nCurrent Token Trends:\n{:?}",
@@ -60,7 +63,7 @@ impl DirectClient {
                 .await;
             let prompt_analyze_holdings = format!(
             "Analyze my current portfolio holdings and provide your single best trading recommendation. Only give action, no explanation. \
-            You may recommend holding if that's the best action. \
+            You may recommend holding if that's the best action. Your bag should buy only 3 tokens, no more. \
             \n\nIf recommending a trade, use one of these formats: \
             \n- For buying: `swap <amount> SOL to <token_address> (not symbol)` \
             \n- For selling: `swap <percentage>% <token_address> (not symbol) to SOL` \
@@ -80,7 +83,13 @@ impl DirectClient {
                 Ok(action_str) => debug!(action = %action_str, "Portfolio Action"),
                 Err(err) => error!(?err, "Failed to get portfolio action"),
             }
-            tokio::time::sleep(tokio::time::Duration::from_secs(10 * 60)).await;
-        }
+            tokio::time::sleep(tokio::time::Duration::from_secs(
+                self.random_number(10 * 60, 60 * 60),
+            )).await;        }
+
+    }
+    fn random_number(&self, min: u64, max: u64) -> u64 {
+        let mut rng = rand::thread_rng();
+        rng.gen_range(min..=max)
     }
 }
