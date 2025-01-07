@@ -84,16 +84,14 @@ impl<M: CompletionModel + 'static, E: EmbeddingModel + 'static> TwitterClient<M,
     pub async fn start(&self) {
         info!("Starting Twitter bot");
         loop {
-            match self.random_number(0, 19) {
-                // ~40% chance for new tweets (0-7)
-                0..=7 => {
+            match self.random_number(0, 2) {
+                0 => {
                     debug!("Post new tweet");
                     if let Err(err) = self.post_new_tweet().await {
                         error!(?err, "Failed to post new tweet");
                     }
                 }
-                // ~5% chance for timeline (8)
-                8 => {
+                1 => {
                     debug!("Process home timeline");
                     match self.scraper.get_home_timeline(5, Vec::new()).await {
                         Ok(tweets) => {
@@ -120,8 +118,7 @@ impl<M: CompletionModel + 'static, E: EmbeddingModel + 'static> TwitterClient<M,
                         }
                     }
                 }
-                // ~45% chance for mentions (9-19)
-                9..=19 => {
+                2 => {
                     debug!("Process mentions");
                     match self.scraper.search_tweets(
                         &format!("@{}", self.username),
@@ -147,7 +144,7 @@ impl<M: CompletionModel + 'static, E: EmbeddingModel + 'static> TwitterClient<M,
 
             // Sleep between tasks
             tokio::time::sleep(tokio::time::Duration::from_secs(
-                self.random_number(30 * 60, 100 * 60),
+                self.random_number(15 * 60, 60 * 60),
             )).await;
         }
     }
