@@ -41,3 +41,5 @@ teloxide = "0.10.0"
 teloxide-core = "0.10.0"
 base64 = "0.22.1"
 rina-solana.workspace = true
+mongodb= "3.1.1"
+uuid = { version = "1.6", features = ["v4"] }

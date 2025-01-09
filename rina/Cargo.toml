@@ -16,7 +16,4 @@ sqlite-vec = "0.1"
 tokio-rusqlite.workspace = true
 chrono = "0.4"
 twitter-v2 = "0.1.8"
-
-[[example]]
-name = "main"
-path = "src/main.rs"
+mongodb = "3.1.1"

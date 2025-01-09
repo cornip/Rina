@@ -8,9 +8,21 @@ pub struct GMGNClient {
 
 impl GMGNClient {
     pub fn new() -> Self {
-        Self {
-            client: reqwest::Client::new(),
-        }
+        let headers = {
+            let mut headers = reqwest::header::HeaderMap::new();
+            headers.insert("accept", "application/json, text/plain, */*".parse().unwrap());
+            headers.insert("host", "gmgn.mobi".parse().unwrap());
+            headers.insert("connection", "Keep-Alive".parse().unwrap());
+            headers.insert("user-agent", "okhttp/4.9.2".parse().unwrap());
+            headers
+        };
+
+        let client = reqwest::Client::builder()
+            .default_headers(headers)
+            .build()
+            .unwrap();
+
+        Self { client }
     }
 
     pub async fn get_top_holders(
@@ -68,28 +80,25 @@ impl GMGNClient {
         Ok(holdings_response.data)
     }
 
-    pub async fn get_swap_rankings(
-        &self,
-        time_range: &str,
-        orderby: Option<&str>,
-        direction: Option<&str>,
-        filters: Option<Vec<&str>>
-    ) -> Result<Vec<TokenRankInfo>, reqwest::Error> {
-        let orderby = orderby.unwrap_or("swaps");
-        let direction = direction.unwrap_or("desc");
-        
-        let mut url = format!(
-            "{BASE_URL}/defi/quotation/v1/rank/sol/swaps/{time_range}?orderby={orderby}&direction={direction}"
+    pub async fn get_swap_rankings(&self, time_period: &str, limit: Option<&str>) -> Result<SwapRankResponse, reqwest::Error> {
+        let url = format!(
+            "{BASE_URL}/defi/quotation/v1/rank/sol/swaps/{time_period}"
         );
+        let params = vec![
+            ("device_id", "1212e9167c96f7ee"),
+            ("client_id", "gmgn_android_209000"), 
+            ("from_app", "gmgn"),
+            ("app_ver", "209000"),
+            ("os", "android"),
+            ("limit", limit.unwrap_or("20")),
+            ("orderby", "marketcap"),
+            ("direction", "desc"),
+            ("filters[]", "renounced"),
+            ("filters[]", "frozen")
+        ];
 
-        if let Some(filters) = filters {
-            for filter in filters {
-                url.push_str(&format!("&filters[]={}", filter));
-            }
-        }
-
-        let response = self.client.get(url).send().await?;
-        let rank_response: SwapRankResponse = response.json().await?;
-        Ok(rank_response.data.rank)
+        let response = self.client.get(url).query(&params).send().await?;
+        let swap_rank_response: SwapRankResponse = response.json().await?;
+        Ok(swap_rank_response)
     }
 }

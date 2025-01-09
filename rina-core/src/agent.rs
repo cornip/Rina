@@ -48,7 +48,6 @@ impl<M: CompletionModel, E: EmbeddingModel> Agent<M, E> {
             
             Expression elements:
             - Common adjectives: {}
-            - Expressions and reactions: {}
             
             Personal elements:
             - Key interests: {}
@@ -57,7 +56,6 @@ impl<M: CompletionModel, E: EmbeddingModel> Agent<M, E> {
             self.character.style.chat.join("\n"),
             self.character.style.post.join("\n"),
             self.character.style.adjectives.join(", "),
-            self.character.style.expressions.join("\n"),
             self.character.style.interests.join("\n"),
             self.character.style.meme_phrases.join("\n")
         );

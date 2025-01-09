@@ -8,6 +8,7 @@ use rina_core::{agent::Agent, clients::discord::DiscordClient, clients::twitter:
 use sqlite_vec::sqlite3_vec_init;
 use tokio_rusqlite::ffi::sqlite3_auto_extension;
 use tokio_rusqlite::Connection;
+use mongodb::Client as MongoClient;
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
@@ -88,8 +89,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let completion_model = oai.completion_model(openai::GPT_4O);
     let should_respond_completion_model = oai.completion_model(openai::GPT_4O);
 
-    // Initialize the `sqlite-vec`extension
-    // See: https://alexgarcia.xyz/sqlite-vec/rust.html
+
     unsafe {
         sqlite3_auto_extension(Some(std::mem::transmute(sqlite3_vec_init as *const ())));
     }
@@ -107,6 +107,25 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let clients = args.clients.split(',').collect::<Vec<&str>>();
     let mut handles = vec![];
+
+    if clients.contains(&"direct") {
+        let mongodb_uri = std::env::var("MONGODB_URI").expect("MONGODB_URI must be set");
+        let mongo_client = MongoClient::with_uri_str(&mongodb_uri)
+            .await
+            .expect("Failed to connect to MongoDB");
+        let collection = mongo_client
+            .database("trading_recommendations")
+            .collection("recommendations");
+        let embedding_model_direct = oai.embedding_model(openai::TEXT_EMBEDDING_3_LARGE);
+        let direct_knowledge = KnowledgeBase::new(conn.clone(), embedding_model_direct.clone()).await?;
+        let direct = DirectClient::new(
+            oai.clone(), 
+            &args.solana_wallet_address,
+            collection.clone(),
+            direct_knowledge.clone()
+        );
+        handles.push(tokio::spawn(async move { direct.start().await }));
+    }
 
     if clients.contains(&"telegram") {
         let telegram = TelegramClient::new(agent.clone(), attention.clone(), args.telegram_bot_token);
@@ -128,10 +147,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             args.heurist_api_key,
         ).await?;
         handles.push(tokio::spawn(async move { twitter.start().await }));
-    }
-    if clients.contains(&"direct") {
-        let direct = DirectClient::new(oai.clone(), &args.solana_wallet_address);
-        handles.push(tokio::spawn(async move { direct.start().await }));
     }
     for handle in handles {
         handle.await.unwrap();

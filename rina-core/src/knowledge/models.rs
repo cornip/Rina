@@ -53,6 +53,46 @@ pub struct Channel {
     pub updated_at: chrono::DateTime<chrono::Utc>,
 }
 
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct TradeRecommendation {
+    pub id: u64,
+    pub wallet_address: String,
+    pub action: TradeAction,
+    pub token_address: String,
+    pub amount: f64,
+    pub reason: String,
+    pub created_at: chrono::DateTime<chrono::Utc>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub enum TradeAction {
+    Buy,
+    Sell,
+    Hold,
+    Swap,
+}
+
+impl TradeAction {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            TradeAction::Buy => "buy",
+            TradeAction::Sell => "sell",
+            TradeAction::Hold => "hold",
+            TradeAction::Swap => "swap",
+        }
+    }
+
+    pub fn from_str(s: &str) -> Option<Self> {
+        match s.to_lowercase().as_str() {
+            "buy" => Some(TradeAction::Buy),
+            "sell" => Some(TradeAction::Sell),
+            "hold" => Some(TradeAction::Hold),
+            "swap" => Some(TradeAction::Swap),
+            _ => None,
+        }
+    }
+}
+
 // Implement the table traits
 impl SqliteVectorStoreTable for Document {
     fn name() -> &'static str {

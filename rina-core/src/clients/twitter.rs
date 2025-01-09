@@ -93,7 +93,7 @@ impl<M: CompletionModel + 'static, E: EmbeddingModel + 'static> TwitterClient<M,
                 }
                 1 => {
                     debug!("Process home timeline");
-                    match self.scraper.get_home_timeline(5, Vec::new()).await {
+                    match self.scraper.get_home_timeline(1, Vec::new()).await {
                         Ok(tweets) => {
                             for tweet in tweets {
                                 let tweet_content = tweet["legacy"]["full_text"]

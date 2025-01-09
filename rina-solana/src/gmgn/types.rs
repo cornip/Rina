@@ -201,4 +201,5 @@ pub struct TokenRankInfo {
     pub bluechip_owner_percentage: f64,
     pub smart_degen_count: u32,
     pub renowned_count: f64,
+    pub is_wash_trading: bool,
 }
