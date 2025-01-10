@@ -1,5 +1,5 @@
 use reqwest;
-use crate::gmgn::types::{TopHoldersResponse, HolderInfo, TokenInfoResponse, TokenInfo, WalletHoldingsResponse, WalletHoldingsData, SwapRankResponse, TokenRankInfo};
+use crate::gmgn::types::{TopHoldersResponse, HolderInfo, TokenInfoResponse, TokenInfo, WalletHoldingsResponse, WalletHoldingsData, SwapRankResponse};
 
 const BASE_URL: &str = "https://gmgn.mobi";
 pub struct GMGNClient {
@@ -80,7 +80,12 @@ impl GMGNClient {
         Ok(holdings_response.data)
     }
 
-    pub async fn get_swap_rankings(&self, time_period: &str, limit: Option<&str>) -> Result<SwapRankResponse, reqwest::Error> {
+    pub async fn get_swap_rankings(
+        &self, 
+        time_period: &str, 
+        launchpad: &str, 
+        limit: Option<&str>,
+    ) -> Result<SwapRankResponse, reqwest::Error> {
         let url = format!(
             "{BASE_URL}/defi/quotation/v1/rank/sol/swaps/{time_period}"
         );
@@ -98,7 +103,11 @@ impl GMGNClient {
         ];
 
         let response = self.client.get(url).query(&params).send().await?;
-        let swap_rank_response: SwapRankResponse = response.json().await?;
+        let mut swap_rank_response: SwapRankResponse = response.json().await?;
+        
+        let launchpad = if launchpad.is_empty() { "Pump.fun" } else { launchpad };
+        swap_rank_response.data.rank.retain(|token| token.launchpad.as_deref() == Some(launchpad));
+        
         Ok(swap_rank_response)
     }
 }

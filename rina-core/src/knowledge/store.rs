@@ -6,7 +6,7 @@ use rig::embeddings::embedding::EmbeddingModel;
 use tokio_rusqlite::Connection;
 use tracing::{debug, info};
 
-use super::models::{Account, Channel, Document, Message, TradeAction, TradeRecommendation};
+use super::models::{Account, Channel, Document, Message, TradeAction, Trade};
 use rig_sqlite::{SqliteError, SqliteVectorIndex, SqliteVectorStore};
 use rusqlite::OptionalExtension;
 
@@ -50,18 +50,19 @@ impl<E: EmbeddingModel> KnowledgeBase<E> {
                 );
                 CREATE INDEX IF NOT EXISTS idx_channel_id_type ON channels(channel_id, channel_type);
 
-                -- Trade recommendations table
-                CREATE TABLE IF NOT EXISTS trade_recommendations (
+                -- Trade table
+                CREATE TABLE IF NOT EXISTS trade (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     wallet_address TEXT NOT NULL,
                     action TEXT NOT NULL,
                     token_address TEXT NOT NULL,
                     amount REAL NOT NULL,
                     reason TEXT NOT NULL,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    signature TEXT NOT NULL
                 );
                 CREATE INDEX IF NOT EXISTS idx_wallet_created_at 
-                ON trade_recommendations(wallet_address, created_at);
+                ON trade(wallet_address, created_at);
 
                 COMMIT;"
             )
@@ -309,20 +310,21 @@ impl<E: EmbeddingModel> KnowledgeBase<E> {
         token_address: &str,
         amount: f64,
         reason: &str,
+        signature: &str,
     ) -> Result<i64, SqliteError> {
         let wallet = wallet_address.to_string();
         let token = token_address.to_string();
         let action_str = action.as_str().to_string();
         let reason_text = reason.to_string();
-
+        let signature_str = signature.to_string();
         self.conn
             .call(move |conn| {
                 conn.query_row(
-                    "INSERT INTO trade_recommendations 
-                     (wallet_address, action, token_address, amount, reason, created_at)
-                     VALUES (?1, ?2, ?3, ?4, ?5, CURRENT_TIMESTAMP)
+                    "INSERT INTO trade 
+                     (wallet_address, action, token_address, amount, reason, created_at, signature)
+                     VALUES (?1, ?2, ?3, ?4, ?5, CURRENT_TIMESTAMP, ?6)
                      RETURNING id",
-                    rusqlite::params![wallet, action_str, token, amount, reason_text],
+                    rusqlite::params![wallet, action_str, token, amount, reason_text, signature_str],
                     |row| row.get(0),
                 )
                 .map_err(tokio_rusqlite::Error::from)
@@ -335,14 +337,14 @@ impl<E: EmbeddingModel> KnowledgeBase<E> {
         &self,
         wallet_address: &str,
         limit: i64,
-    ) -> Result<Vec<TradeRecommendation>, SqliteError> {
+    ) -> Result<Vec<Trade>, SqliteError> {
         let wallet = wallet_address.to_string();
 
         self.conn
             .call(move |conn| {
                 let mut stmt = conn.prepare(
-                    "SELECT id, wallet_address, action, token_address, amount, reason, created_at 
-                     FROM trade_recommendations 
+                    "SELECT id, wallet_address, action, token_address, amount, reason, created_at, signature 
+                     FROM trade 
                      WHERE wallet_address = ?1 
                      ORDER BY created_at DESC 
                      LIMIT ?2"
@@ -350,7 +352,7 @@ impl<E: EmbeddingModel> KnowledgeBase<E> {
 
                 let trades = stmt
                     .query_map([wallet, limit.to_string()], |row| {
-                        Ok(TradeRecommendation {
+                        Ok(Trade {
                             id: row.get(0)?,
                             wallet_address: row.get(1)?,
                             action: TradeAction::from_str(&row.get::<_, String>(2)?)
@@ -359,6 +361,7 @@ impl<E: EmbeddingModel> KnowledgeBase<E> {
                             amount: row.get(4)?,
                             reason: row.get(5)?,
                             created_at: row.get(6)?,
+                            signature: row.get(7)?,
                         })
                     })?
                     .collect::<Result<Vec<_>, _>>()?;

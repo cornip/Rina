@@ -79,24 +79,3 @@ pub enum TradeAction {
     Hold,
     Swap,
 }
-
-impl TradeAction {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            TradeAction::Buy => "buy",
-            TradeAction::Sell => "sell",
-            TradeAction::Hold => "hold",
-            TradeAction::Swap => "swap",
-        }
-    }
-
-    pub fn from_str(s: &str) -> Option<Self> {
-        match s.to_lowercase().as_str() {
-            "buy" => Some(TradeAction::Buy),
-            "sell" => Some(TradeAction::Sell),
-            "hold" => Some(TradeAction::Hold),
-            "swap" => Some(TradeAction::Swap),
-            _ => None,
-        }
-    }
-} 

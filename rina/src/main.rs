@@ -114,8 +114,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .await
             .expect("Failed to connect to MongoDB");
         let collection = mongo_client
-            .database("trading_recommendations")
-            .collection("recommendations");
+            .database("trade")
+            .collection("data");
         let embedding_model_direct = oai.embedding_model(openai::TEXT_EMBEDDING_3_LARGE);
         let direct_knowledge = KnowledgeBase::new(conn.clone(), embedding_model_direct.clone()).await?;
         let direct = DirectClient::new(

@@ -161,7 +161,6 @@ pub struct TokenRankInfo {
     pub chain: String,
     pub address: String,
     pub symbol: String,
-    pub logo: Option<String>,
     pub price: f64,
     pub price_change_percent: f64,
     pub swaps: f64,

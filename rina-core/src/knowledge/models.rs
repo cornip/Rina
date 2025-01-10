@@ -54,7 +54,7 @@ pub struct Channel {
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-pub struct TradeRecommendation {
+pub struct Trade {
     pub id: u64,
     pub wallet_address: String,
     pub action: TradeAction,
@@ -62,6 +62,7 @@ pub struct TradeRecommendation {
     pub amount: f64,
     pub reason: String,
     pub created_at: chrono::DateTime<chrono::Utc>,
+    pub signature: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
