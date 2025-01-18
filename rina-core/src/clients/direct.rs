@@ -176,7 +176,7 @@ impl<E: EmbeddingModel + 'static> DirectClient<E> {
     fn create_trends_prompt(&self, token_trending: &str, knowledge_context: &[Trade]) -> String {
         format!(
             "Analyze the token trends and provide your trading recommendation in JSON format. \
-            Consider market cap (ONLY target tokens with <5M market cap), smart money movement, holder distribution, volume, and liquidity. \
+            Consider market cap, smart money movement, holder distribution, volume, and liquidity. \
             Focus on microcap gems for higher potential returns given the small portfolio size. \
             If no good trading opportunities are found, use action 'hold'. \
             Provide a brief, concise reason (max 100 characters). \
